@@ -1,0 +1,76 @@
+﻿@page "/Account/decifra-text"
+
+@inject IEncryptionService _encriptado
+@inject ApplicationDbContext _context
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<AuthorizeView Context="autorizeview">
+    <div class="container mt-5">
+        <h2 class="mb-4">🔐 Descifrado de Texto</h2>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>⚠️ Error:</strong> @ErrorMessage
+
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <strong>✅ Éxito:</strong> Texto descifrado correctamente:
+                <br />
+                <code>@DecryptedText</code>
+                <button type="button" class="close" @onclick="HideAlert" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        <div class="card p-4">
+            <EditForm Model="decifra" OnValidSubmit="@DecryptText"
+            FormName="DecryptForm" method="post">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-group">
+                    <label for="keyInput">🔑 Ingresa la Clave para Descifrar</label>
+                    <InputText class="form-control" @bind-Value="decifra.KeyToDecrypt" placeholder="Ingresa la clave" />
+                    <ValidationMessage For="@(() => decifra.KeyToDecrypt)" />
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-3">🔓 Descifrar Texto</button>
+            </EditForm>
+        </div>
+
+        @if (ShowDecryptedText)
+        {
+            <div class="card mt-4 p-4">
+                <h5>📄 Texto Desencriptado:</h5>
+                <p class="text-muted">@DecryptedText</p>
+            </div>
+        }
+    </div>
+
+</AuthorizeView>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+
+        if (user == null || !user.Identity?.IsAuthenticated == true)
+        {
+
+            Navigation.NavigateTo("/Account/AccessDenied", forceLoad: true);
+        }
+    }
+}
